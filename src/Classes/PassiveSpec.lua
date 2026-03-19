@@ -1717,9 +1717,19 @@ function PassiveSpecClass:BuildSubgraph(jewel, parentSocket, id, upSize, importe
 	local function addToAllocatedSubgraphNodes(node)
 		local proxyGroup = matchGroup(expansionJewel.proxy)
 		if proxyGroup then
+			local matchOidx = node.oidx
+			if clusterJewel.sizeIndex < expansionJewel.size and node.clusterOidx then
+				local orbitOffsets = self.build.data.clusterJewels.orbitOffsets
+				if orbitOffsets then
+					local proxyOffset = orbitOffsets[tonumber(expansionJewel.proxy)]
+					if proxyOffset and proxyOffset[clusterJewel.sizeIndex] then
+						matchOidx = (node.clusterOidx + proxyOffset[clusterJewel.sizeIndex]) % clusterJewel.totalIndicies
+					end
+				end
+			end
 			for id, data in pairs(importedNodes) do
 				if proxyGroup == data.group then
-					if node.oidx == data.orbitIndex and not data.isMastery then
+					if matchOidx == data.orbitIndex and not data.isMastery then
 						for _, extendedId in ipairs(importedGroups[proxyGroup].nodes) do
 							if id == tonumber(extendedId) and inExtendedHashes(id) then
 								return true
@@ -2003,6 +2013,10 @@ function PassiveSpecClass:BuildSubgraph(jewel, parentSocket, id, upSize, importe
 		end
 	end
 	local proxyNodeSkillsPerOrbit = self.tree.skillsPerOrbit[proxyNode.o+1]
+
+	for _, node in pairs(indicies) do
+		node.clusterOidx = node.oidx
+	end
 
 	-- Translate oidx positioning to TreeData-relative values
 	for _, node in pairs(indicies) do
